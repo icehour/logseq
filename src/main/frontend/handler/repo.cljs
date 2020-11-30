@@ -72,9 +72,7 @@
   (spec/validate :repos/url repo-url)
   (let [repo-dir (util/get-repo-dir repo-url)
         format (state/get-preferred-format)
-        path (str "pages/contents." (if (= (name format) "markdown")
-                                      "md"
-                                      (name format)))
+        path (str "pages/contents." (config/get-file-extension format))
         file-path (str "/" path)
         default-content (util/default-content-with-title format "contents")]
     (p/let [_ (-> (fs/mkdir (str repo-dir "/pages"))
@@ -419,7 +417,7 @@
        (fn [result]
          (state/set-git-clone-repo! "")
          (state/set-current-repo! repo-url)
-         (db/start-db-conn! (:me @state/state) repo-url)
+         (db/start-db-conn! (state/get-me) repo-url)
          (db/mark-repo-as-cloned repo-url))
        (fn [e]
          (println "Clone failed, error: ")
@@ -526,7 +524,7 @@
   (spec/validate :repos/url repo-url)
   (->
    (p/let [_ (clone repo-url)
-           _ (git-handler/git-set-username-email! repo-url (:me @state/state))]
+           _ (git-handler/git-set-username-email! repo-url (state/get-me))]
      (load-db-and-journals! repo-url nil true)
      (periodically-pull-and-push repo-url {:pull-now? false})
      ;; (periodically-persist-app-metadata repo-url)
